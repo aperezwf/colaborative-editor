@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crear Sala</title>
+</head>
+<body>
+    <form id="roomForm">
+        <input type="text" id="roomName" placeholder="Nombre de la sala" required>
+        <input type="text" id="userName" placeholder="Tu nombre" required>
+        <button type="submit">Unirse</button>
+    </form>
+
+    <script>
+        document.getElementById('roomForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const roomName = encodeURIComponent(document.getElementById('roomName').value);
+            const userName = encodeURIComponent(document.getElementById('userName').value);
+            window.location.href = `/editor.html?room=${roomName}&user=${userName}`;
+        });
+    </script>
+</body>
+</html>

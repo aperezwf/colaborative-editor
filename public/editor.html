@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Editor Colaborativo</title>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.bubble.css" rel="stylesheet">
+    <style>
+        #editor { height: 70vh; margin: 20px 0; }
+        #statusBar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #333;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        #saveBtn {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="editor"></div>
+    <div id="statusBar">
+        <div id="connectionStatus">Conectando...</div>
+        <button id="saveBtn">Guardar</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(location.search);
+        const roomName = urlParams.get('room');
+        const userName = urlParams.get('user');
+        
+        const quill = new Quill('#editor', { theme: 'bubble' });
+        const socket = io();
+        let isConnected = false;
+
+        // Cargar contenido inicial
+        async function loadContent() {
+            const response = await fetch(`/api/rooms/${roomName}`);
+            const { exists, content } = await response.json();
+            if (exists) quill.root.innerHTML = content;
+        }
+
+        // Guardar contenido
+        async function saveContent() {
+            try {
+                const response = await fetch(`/api/rooms/${roomName}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: quill.root.innerHTML })
+                });
+                if (isConnected) socket.emit('text-change', userName );
+                return await response.json();
+            } catch (error) {
+                return { error: 'Error de conexión' };
+            }
+        }
+
+        // Event listeners
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            const result = await saveContent();
+            
+            //alert(result.success ? 'Guardado exitoso' : 'Error al guardar');
+
+        });
+
+        quill.on('text-change', (delta) => {
+            if (isConnected) socket.emit('text-change', userName );
+        });
+
+        socket.on('connect', async () => {
+            isConnected = true;
+            document.getElementById('connectionStatus').textContent = 'Conectado';
+            socket.emit('join-room', roomName, userName);
+            await loadContent();
+        });
+
+        socket.on('disconnect', () => {
+            isConnected = false;
+            document.getElementById('connectionStatus').textContent = 'Desconectado';
+        });
+        
+        socket.on('text-change', async (delta) => {
+            console.log("Recibido cambio de texto", delta);
+        //    quill.updateContents(delta);
+        document.getElementById('connectionStatus').textContent = `el usuario ${delta} esta editando`;
+        await loadContent();
+        });
+
+        socket.on('content-update', (content) => {
+            quill.root.innerHTML = content;
+        });
+    </script>
+</body>
+</html>
