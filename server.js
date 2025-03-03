@@ -80,3 +80,6 @@ server.listen(PORT, () => {
   console.log(`Servidor en puerto ${PORT}`);
   fs.mkdir(path.join(__dirname, 'savedContent'), { recursive: true });
 });
+
+
+exports.server = server;
