@@ -40,7 +40,10 @@
         const roomName = urlParams.get('room');
         const userName = urlParams.get('user');
         
-        const quill = new Quill('#editor', { theme: 'bubble' });
+        const quill = new Quill('#editor', { theme: 'bubble', placeholder: 'Puedes escribir texto en está area ...',
+         modules: { toolbar: [['bold', 'italic', 'underline', 'strike'], 
+         [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'image']] } 
+        });
         const socket = io();
         let isConnected = false;
 
